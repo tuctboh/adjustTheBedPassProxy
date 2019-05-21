@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: TheBed Password Proxy
+Parameters:
+  email:
+    Description: 'email'
+    Type: 'String'
+    Default: ""
+  password:
+    Description: 'password'
+    Type: 'String'
+    Default: ""
+  secret:
+    Description: 'a secret to validate your lambda request alphanumeric only please'
+    Type: 'String'
+    Default: ""
+Resources:
+  TheBedPassProxy:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: lambda/index.handler
+      Runtime: nodejs8.10
+      Description: 'Password Proxy for TheBed Alexa skill'
+      MemorySize: 128
+      Timeout: 15
+      Events:
+        LambdaMicroservice:
+          Type: Api
+          Properties:
+            Path: /
+            Method: ANY
+      Environment:
+        Variables:
+          EMAIL: !Ref email
+          PASSWORD: !Ref password
+          SECRET: !Ref secret
+  LambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName:
+        'Fn::GetAtt':
+          - TheBedPassProxy
+          - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        'Fn::Sub': 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*/*/*/*'
+Outputs:
+  url:
+     Description: HTTPS endpoint for your lambda
+     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/${ServerlessRestApiProdStage}/?secret="
